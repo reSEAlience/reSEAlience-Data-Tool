@@ -356,3 +356,97 @@ code {
   user-select: none;
   -webkit-user-select: none;
 }
+
+
+/* ==========================================
+   BAKODDAGAT - EXPANDED MENU HEADER
+   ========================================== */
+
+.map-menu-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 60px;
+  padding: 0 8px;
+}
+
+.map-menubar.expanded .map-menu-header {
+  justify-content: space-between;
+  padding: 0 12px;
+}
+
+.map-menu-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: white;
+  white-space: nowrap;
+}
+
+.map-menu-toggle {
+  width: 44px;
+  height: 50px;
+  min-height: 50px;
+  flex-shrink: 0;
+}
+
+/* ==========================================
+   SELECTED TOOL INFORMATION
+   ========================================== */
+
+.map-tool-info {
+  background: #4d9b85;
+  color: #ffffff;
+  border-radius: 12px;
+  margin: 8px 8px 14px;
+  padding: 18px 12px;
+  flex-shrink: 0;
+}
+
+.map-tool-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.map-tool-description {
+  margin-top: 16px;
+  font-size: 13px;
+  line-height: 1.6;
+  text-align: left;
+  color: #ffffff;
+}
+
+/* When expanded, tool buttons are placed below
+   the description instead of being highlighted */
+
+.map-menubar.expanded .map-menu-item.active {
+  background: transparent;
+}
+
+.map-menubar.expanded .map-menu-item.active:hover {
+  background: #326784;
+}
+
+/* Keep navigation buttons compact */
+.map-menubar.expanded .map-menu-item {
+  min-height: 56px;
+}
+
+/* Make the expanded menu slightly wider
+   to accommodate the title and description */
+
+.map-menubar.expanded {
+  width: 250px;
+  flex-basis: 250px;
+}
+
+/* Tablet layout */
+@media (min-width: 601px) {
+  .map-menubar.expanded {
+    width: 270px;
+    flex-basis: 270px;
+  }
+}

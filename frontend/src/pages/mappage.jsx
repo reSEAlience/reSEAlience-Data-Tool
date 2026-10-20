@@ -1,4 +1,5 @@
 
+
 import { useState } from "react";
 import { useNavigate } from "react-router";
 
@@ -12,8 +13,11 @@ import MenuBar from "../components/menubar";
 
 import "leaflet/dist/leaflet.css";
 
-const MAP_CENTER = [11.0, 122.7];
-const MAP_ZOOM = 7;
+// Approximate Western Visayas display bounds
+const WESTERN_VISAYAS_BOUNDS = [
+  [9.5, 121.0],   // Southwest
+  [12.5, 124.0]   // Northeast
+];
 
 export default function MapPage() {
   const [activeTool, setActiveTool] = useState("map");
@@ -21,7 +25,6 @@ export default function MapPage() {
 
   return (
     <main className="mapping-page">
-
       <MenuBar
         activeTool={activeTool}
         onToolChange={setActiveTool}
@@ -30,8 +33,8 @@ export default function MapPage() {
 
       <section className="mapping-content">
         <MapContainer
-          center={MAP_CENTER}
-          zoom={MAP_ZOOM}
+          bounds={WESTERN_VISAYAS_BOUNDS}
+          boundsOptions={{ padding: [20, 20] }}
           minZoom={5}
           maxZoom={18}
           zoomControl={false}
@@ -47,7 +50,6 @@ export default function MapPage() {
           <ZoomControl position="bottomright" />
         </MapContainer>
       </section>
-
     </main>
   );
 }
