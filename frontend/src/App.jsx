@@ -1,6 +1,7 @@
 import { Route, Routes } from "react-router";
 import { useEffect } from "react";
 import HomePage from './pages/homepage';
+import MapPage from "./pages/mappage";
 import MyIcon from './assets/Logo-w.png';
 
 const App = () => {
@@ -47,7 +48,10 @@ const App = () => {
 
     return (
         <Routes>
+          {/* Homepage route */}
             <Route path="/" element={<HomePage />} />
+            {/*General Mapping route  */}
+            <Route path="/map" element={<MapPage />} />
         </Routes>
     );
 };

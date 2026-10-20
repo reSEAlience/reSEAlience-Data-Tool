@@ -8,11 +8,12 @@ import cloudIcon from "../assets/icons/cloud_icon.png"
 import observationIcon from "../assets/icons/obs_icon.png"
 
 import { useState } from "react";
-
+import { useNavigate } from "react-router";
 
 
 const Homepage = () => {
   const [isOffline, setIsOffline] = useState(false);
+  const navigate = useNavigate();
   return (
    <div className="min-h-dvh bg-white">
   <div className="relative isolate min-h-dvh overflow-hidden bg-white">
@@ -40,7 +41,7 @@ const Homepage = () => {
           {/* Open Map button */}
           <button
             type="button"
-            onClick={() => console.log("Open Map clicked")}
+            onClick={() =>  navigate("/map")}
             className="mb-5 flex min-h-20 w-full items-center gap-3 rounded-xl bg-[#4e9a83] p-3 text-left text-white transition-colors hover:bg-[#438b75] active:scale-[0.99] sm:mb-6 sm:min-h-24 sm:gap-5 sm:p-5"
           >
             <img
