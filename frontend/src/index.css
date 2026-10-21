@@ -137,3 +137,316 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+
+
+/* ==========================================
+   reSEAlience - GENERAL MAPPING PAGE
+   ========================================== */
+
+/* Full-screen layout only when map page is active */
+#root:has(.mapping-page) {
+  width: 100%;
+  max-width: none;
+  min-height: 100dvh;
+  margin: 0;
+  padding: 0;
+  border: none;
+  display: block;
+  text-align: left;
+}
+
+/* Mapping page container */
+.mapping-page {
+  display: flex;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  background: #8fd3e4;
+  position: relative;
+}
+
+/* Leaflet map area */
+.mapping-content {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.leaflet-map {
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+/* ==========================================
+   MAPPING MENU BAR
+   ========================================== */
+
+.map-menubar {
+  width: 66px;
+  flex: 0 0 66px;
+  height: 100%;
+  background: #153f61;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 1000;
+  transition: width 0.2s ease,
+              flex-basis 0.2s ease;
+}
+
+.map-menubar.expanded {
+  width: 210px;
+  flex-basis: 210px;
+}
+
+/* Menu buttons */
+.map-menu-toggle,
+.map-menu-item,
+.map-menu-home {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* Hamburger menu */
+.map-menu-toggle {
+  height: 56px;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Navigation items */
+.map-menu-items {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 7px;
+}
+
+.map-menu-item {
+  width: 100%;
+  min-height: 67px;
+  padding: 8px 4px;
+  border-radius: 11px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  transition: background-color 0.2s ease;
+}
+
+.map-menu-item span {
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+}
+
+/* Selected tool */
+.map-menu-item.active {
+  background: #4d9b85;
+}
+
+/* Hover effect */
+.map-menu-item:hover {
+  background: #326784;
+}
+
+.map-menu-item.active:hover {
+  background: #4d9b85;
+}
+
+/* Expanded menu */
+.map-menubar.expanded .map-menu-item {
+  flex-direction: row;
+  justify-content: flex-start;
+  gap: 14px;
+  padding: 10px 15px;
+}
+
+.map-menubar.expanded .map-menu-item span {
+  font-size: 13px;
+  text-align: left;
+}
+
+/* Bottom section */
+.map-menu-bottom {
+  margin-top: auto;
+  padding: 12px 5px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.map-menu-home {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 8px;
+}
+
+.map-menu-logo {
+  width: 42px;
+  height: auto;
+  object-fit: contain;
+}
+
+/* Accessibility */
+.map-menubar button:focus-visible {
+  outline: 2px solid #7dd3fc;
+  outline-offset: -2px;
+}
+
+/* ==========================================
+   LEAFLET CONTROLS
+   ========================================== */
+
+.mapping-page .leaflet-control-container {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.mapping-page .leaflet-touch
+.leaflet-control-zoom a {
+  width: 40px;
+  height: 40px;
+  line-height: 40px;
+}
+
+/* ==========================================
+   TABLET AND MOBILE RESPONSIVENESS
+   ========================================== */
+
+@media (max-width: 600px) {
+  .map-menubar {
+    width: 58px;
+    flex-basis: 58px;
+  }
+
+  .map-menu-item {
+    min-height: 62px;
+  }
+
+  .map-menu-item span {
+    font-size: 9px;
+  }
+
+  .mapping-page .leaflet-touch
+  .leaflet-control-zoom a {
+    width: 36px;
+    height: 36px;
+    line-height: 36px;
+  }
+}
+
+/* Prevent text selection while using mapping tools */
+.map-menubar {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+
+/* ==========================================
+   BAKODDAGAT - EXPANDED MENU HEADER
+   ========================================== */
+
+.map-menu-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 60px;
+  padding: 0 8px;
+}
+
+.map-menubar.expanded .map-menu-header {
+  justify-content: space-between;
+  padding: 0 12px;
+}
+
+.map-menu-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: white;
+  white-space: nowrap;
+}
+
+.map-menu-toggle {
+  width: 44px;
+  height: 50px;
+  min-height: 50px;
+  flex-shrink: 0;
+}
+
+/* ==========================================
+   SELECTED TOOL INFORMATION
+   ========================================== */
+
+.map-tool-info {
+  background: #4d9b85;
+  color: #ffffff;
+  border-radius: 12px;
+  margin: 8px 8px 14px;
+  padding: 18px 12px;
+  flex-shrink: 0;
+}
+
+.map-tool-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.map-tool-description {
+  margin-top: 16px;
+  font-size: 13px;
+  line-height: 1.6;
+  text-align: left;
+  color: #ffffff;
+}
+
+/* When expanded, tool buttons are placed below
+   the description instead of being highlighted */
+
+.map-menubar.expanded .map-menu-item.active {
+  background: transparent;
+}
+
+.map-menubar.expanded .map-menu-item.active:hover {
+  background: #326784;
+}
+
+/* Keep navigation buttons compact */
+.map-menubar.expanded .map-menu-item {
+  min-height: 56px;
+}
+
+/* Make the expanded menu slightly wider
+   to accommodate the title and description */
+
+.map-menubar.expanded {
+  width: 250px;
+  flex-basis: 250px;
+}
+
+/* Tablet layout */
+@media (min-width: 601px) {
+  .map-menubar.expanded {
+    width: 270px;
+    flex-basis: 270px;
+  }
+}
