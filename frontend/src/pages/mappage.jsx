@@ -2,6 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import OfflineMap from "../components/map/OfflineMap";
 import MapToolbar from "../components/map/MapToolbar";
+import OfflineRegionDownloader from
+  "../components/map/OfflineRegionDownloader";
+
 
 const STORAGE_KEY = "resealience-map-features-v1";
 const kindLabels = { ground: "Fishing ground", route: "Fishing route", hazard: "Hazard", incident: "Incident" };
@@ -169,8 +172,36 @@ export default function Mappage() {
               <p className="mt-1 text-sm leading-relaxed text-slate-500">Map fishing grounds, routes, and reported safety points. This prototype saves data only in this browser.</p>
             </div>
 
-            <MapToolbar activeTool={activeTool} onChange={(tool) => { setActiveTool(tool); setDraftPoints([]); setMessage(tool === "pan" ? "Explore the map." : `Selected ${kindLabels[tool] || tool}. Tap the map to add points.`); }}
-              onFinish={finishDrawing} canFinish={draftPoints.length >= (activeTool === "ground" ? 3 : 2)} onCancel={cancelDrawing} />
+            
+<MapToolbar
+  activeTool={activeTool}
+  onChange={(tool) => {
+    setActiveTool(tool);
+    setDraftPoints([]);
+    setMessage(
+      tool === "pan"
+        ? "Explore the map."
+        : `Selected ${kindLabels[tool] || tool}. Tap the map to add points.`
+    );
+  }}
+  onFinish={finishDrawing}
+  canFinish={
+    draftPoints.length >=
+    (activeTool === "ground" ? 3 : 2)
+  }
+  onCancel={cancelDrawing}
+/>
+
+{/* Offline map download controls */}
+<div className="my-4">
+  <OfflineRegionDownloader />
+</div>
+
+{/* Your existing Saved features section stays below */}
+<div className="my-5 rounded-xl border border-slate-200 bg-white p-3">
+  {/* Keep your existing saved features code here */}
+</div>
+
 
             <div className="my-5 rounded-xl border border-slate-200 bg-white p-3">
               <div className="flex items-center justify-between">

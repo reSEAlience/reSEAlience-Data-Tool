@@ -1,12 +1,28 @@
-
 import { useEffect, useRef, useState } from "react";
 import {
   Map,
   NavigationControl,
   setWorkerUrl,
 } from "maplibre-gl";
-import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import "maplibre-gl/dist/maplibre-gl.css";
+import * as maplibregl from "maplibre-gl";
+import {
+  OfflineMapManager,
+  OfflineManagerControl,
+} from "map-gl-offline";
+import "map-gl-offline/style.css";
+
+import workerUrl from
+  "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
+
+maplibregl.setWorkerUrl(workerUrl);
+
+const STYLE_URL =
+  "https://tiles.openfreemap.org/styles/liberty";
+
+const offlineManager = new OfflineMapManager();
+
+
 
 // Configure the MapLibre worker for Vite.
 setWorkerUrl(workerUrl);
@@ -265,9 +281,10 @@ export default function OfflineMap({
 
     let disposed = false;
 
-    const map = new Map({
+    
+    const map = new maplibregl.Map({
       container: mapContainer.current,
-      style: "https://tiles.openfreemap.org/styles/liberty",
+      style: STYLE_URL,
       center: [122.55, 11.05],
       zoom: 8,
       minZoom: 5,
@@ -277,12 +294,18 @@ export default function OfflineMap({
       },
     });
 
+
     mapInstance.current = map;
 
-    map.addControl(
-      new NavigationControl(),
-      "top-right"
-    );
+    
+  map.addControl(
+    new OfflineManagerControl(offlineManager, {
+      styleUrl: STYLE_URL,
+      mapLib: maplibregl,
+    }),
+    "top-right"
+  );
+
 
     map.on("load", () => {
       if (disposed) return;
