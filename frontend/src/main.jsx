@@ -13,3 +13,13 @@ createRoot(document.getElementById('root')).render(
     </BrowserRouter>
   </StrictMode>,
 )
+
+if ("serviceWorker" in navigator && window.location.protocol !== "file:") {
+  navigator.serviceWorker
+    .register(`${import.meta.env.BASE_URL}sw.js`, {
+      scope: import.meta.env.BASE_URL,
+    })
+    .catch((error) => {
+      console.error("Could not enable offline app support:", error);
+    });
+}
