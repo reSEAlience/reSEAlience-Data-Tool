@@ -16,6 +16,8 @@ const EMPTY_GEOJSON = {
   features: [],
 };
 
+const WEB_MERCATOR_RADIUS = 6378137;
+
 const COLORS = {
   ground: "#14b8a6",
   route: "#2563eb",
@@ -120,6 +122,70 @@ function toDraftCollection(draftPoints = [], activeTool) {
   };
 }
 
+function reprojectGeometry(geometry) {
+  if (!geometry) return geometry;
+
+  if (geometry.type === "GeometryCollection") {
+    return {
+      ...geometry,
+      geometries: geometry.geometries.map(reprojectGeometry),
+    };
+  }
+
+  function reprojectCoordinates(value) {
+    if (!Array.isArray(value)) return value;
+
+    if (
+      value.length >= 2 &&
+      typeof value[0] === "number" &&
+      typeof value[1] === "number"
+    ) {
+      const [x, y, ...rest] = value;
+      return [
+        (x / WEB_MERCATOR_RADIUS) * (180 / Math.PI),
+        (2 * Math.atan(Math.exp(y / WEB_MERCATOR_RADIUS)) - Math.PI / 2) *
+          (180 / Math.PI),
+        ...rest,
+      ];
+    }
+
+    return value.map(reprojectCoordinates);
+  }
+
+  return {
+    ...geometry,
+    coordinates: reprojectCoordinates(geometry.coordinates),
+  };
+}
+
+function normalizeGeoJSON(data) {
+  const crsName = data.crs?.properties?.name;
+
+  if (!crsName || !crsName.endsWith("3857")) return data;
+
+  const geojson = { ...data };
+  delete geojson.crs;
+
+  if (geojson.type === "FeatureCollection") {
+    return {
+      ...geojson,
+      features: geojson.features.map((feature) => ({
+        ...feature,
+        geometry: reprojectGeometry(feature.geometry),
+      })),
+    };
+  }
+
+  if (geojson.type === "Feature") {
+    return {
+      ...geojson,
+      geometry: reprojectGeometry(geojson.geometry),
+    };
+  }
+
+  return reprojectGeometry(geojson);
+}
+
 function getGeoJSONBounds(data) {
   const bounds = [
     [Infinity, Infinity],
@@ -201,17 +267,7 @@ export default function OfflineMap({
 
     const map = new Map({
       container: mapContainer.current,
-      style: {
-        version: 8,
-        sources: {},
-        layers: [{
-          id: "background",
-          type: "background",
-          paint: {
-            "background-color": "#b6dce5",
-          },
-        }],
-      },
+      style: "https://tiles.openfreemap.org/styles/liberty",
       center: [122.55, 11.05],
       zoom: 8,
       minZoom: 5,
@@ -242,7 +298,7 @@ export default function OfflineMap({
         source: "regional-data",
         paint: {
           "fill-color": "#dce9d9",
-          "fill-opacity": 0.9,
+          "fill-opacity": 0.7,
         },
       });
 
@@ -431,7 +487,7 @@ export default function OfflineMap({
     async function loadRegionData() {
       try {
         const response = await fetch(
-          `${import.meta.env.BASE_URL}data/regionVI.json`
+          `${import.meta.env.BASE_URL}data/Region_Six_Polygons.geojson`
         );
 
         if (!response.ok) {
@@ -440,7 +496,7 @@ export default function OfflineMap({
           );
         }
 
-        const data = await response.json();
+        const data = normalizeGeoJSON(await response.json());
 
         if (
           data.type !== "FeatureCollection" &&

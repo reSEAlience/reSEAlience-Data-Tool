@@ -15,11 +15,13 @@ createRoot(document.getElementById('root')).render(
 )
 
 if ("serviceWorker" in navigator && window.location.protocol !== "file:") {
-  navigator.serviceWorker
-    .register(`${import.meta.env.BASE_URL}sw.js`, {
-      scope: import.meta.env.BASE_URL,
-    })
-    .catch((error) => {
-      console.error("Could not enable offline app support:", error);
-    });
+  navigator.serviceWorker.getRegistration(import.meta.env.BASE_URL).then((registration) => {
+    if (registration?.active?.scriptURL.endsWith("/sw.js")) {
+      registration.unregister().catch((error) => {
+        console.error("Could not disable offline app support:", error);
+      });
+    }
+  }).catch((error) => {
+    console.error("Could not check offline app support:", error);
+  });
 }
