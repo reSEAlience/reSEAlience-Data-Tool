@@ -53,52 +53,11 @@ const Navbar = () => {
           ))}
         </div>
 
-        {/* Mobile hamburger button */}
-        <button
-          type="button"
-          className="flex h-10 w-10 flex-col items-center justify-center gap-1.5 rounded-lg text-[#16394a] transition-colors hover:bg-[#e8f1e9] sm:hidden"
-          onClick={() => setMenuOpen((open) => !open)}
-          aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"}
-          aria-expanded={menuOpen}
-          aria-controls="homepage-navigation-menu"
-        >
-          <span
-            className={`h-0.5 w-6 rounded-full bg-current transition-transform ${
-              menuOpen ? "translate-y-2 rotate-45" : ""
-            }`}
-          />
-          <span
-            className={`h-0.5 w-6 rounded-full bg-current transition-opacity ${
-              menuOpen ? "opacity-0" : "opacity-100"
-            }`}
-          />
-          <span
-            className={`h-0.5 w-6 rounded-full bg-current transition-transform ${
-              menuOpen ? "-translate-y-2 -rotate-45" : ""
-            }`}
-          />
-        </button>
       </div>
-
-      {/* Mobile navigation dropdown */}
-      {menuOpen && (
-        <div
-          id="homepage-navigation-menu"
-          className="absolute right-3 top-full mt-1 w-56 rounded-xl border border-[#e3e8e1] bg-[#fffdf9] p-2 shadow-lg sm:hidden"
-        >
-          {links.map((link) => (
-            <Link
-              key={link.to}
-              to={link.to}
-              className={linkStyle(link.to)}
-              onClick={closeMenu}
-            >
-              {link.name}
-            </Link>
-          ))}
-        </div>
-      )}
+    
     </nav>
+
+   
   );
 };
 

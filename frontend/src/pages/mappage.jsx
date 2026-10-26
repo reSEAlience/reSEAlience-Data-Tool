@@ -1,5 +1,9 @@
+import { Capacitor } from "@capacitor/core";
+import { Filesystem, Directory, Encoding } from "@capacitor/filesystem";
+import { Share } from "@capacitor/share";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
+import Logo from "../assets/Logo-w.png";
 import OfflineMap from "../components/map/OfflineMap";
 import MapToolbar from "../components/map/MapToolbar";
 import OfflineRegionDownloader from
@@ -103,7 +107,7 @@ export default function Mappage() {
     setMessage("Selected feature deleted.");
   }
 
-  function exportGeoJSON() {
+  async function exportGeoJSON() {
     const collection = {
       type: "FeatureCollection",
       features: features.map((item) => {
@@ -125,11 +129,39 @@ export default function Mappage() {
         };
       }),
     };
-    const blob = new Blob([JSON.stringify(collection, null, 2)], { type: "application/geo+json" });
+    const json = JSON.stringify(collection, null, 2);
+    const fileName = `resealience-observations-${new Date().toISOString().slice(0, 10)}.geojson`;
+
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const { uri } = await Filesystem.writeFile({
+          path: fileName,
+          data: json,
+          directory: Directory.Cache,
+          encoding: Encoding.UTF8,
+        });
+        await Share.share({
+          title: "reSEAlience observations",
+          text: "Exported map observations (GeoJSON)",
+          url: uri,
+          dialogTitle: "Save or send your GeoJSON",
+        });
+        setMessage("GeoJSON exported. Choose where to save or send it.");
+      } catch (error) {
+        // Dismissing the share sheet also throws, so don't treat it as a failure
+        if (!String(error?.message || error).toLowerCase().includes("cancel")) {
+          setMessage("Export failed. Please try again.");
+        }
+      }
+      return;
+    }
+
+    // Browser fallback
+    const blob = new Blob([json], { type: "application/geo+json" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "resealience-observations.geojson";
+    link.download = fileName;
     link.click();
     URL.revokeObjectURL(url);
   }
@@ -152,8 +184,10 @@ export default function Mappage() {
               {sidebarOpen ? "←" : "☰"}
             </button>
             <div className="min-w-0">
-              <p className="truncate text-sm font-extrabold tracking-tight text-[#16394a] sm:text-base">reSEAlience</p>
-              <p className="hidden text-xs text-slate-500 sm:block">Western Visayas · Offline mapping workspace</p>
+              <div className="flex items-center gap-2">
+                <img src={Logo} alt="reSEAlience" className="h-6 w-auto sm:h-7" />
+                <p className="truncate text-sm font-extrabold tracking-tight text-[#16394a] sm:text-base">BakodDagat</p>
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -255,12 +289,7 @@ export default function Mappage() {
           </div>
           <div className="absolute bottom-4 left-3 right-3 z-[400] flex items-end justify-between gap-2 sm:bottom-5 sm:left-5 sm:right-5">
             <p role="status" className="max-w-[75%] rounded-xl border border-white/80 bg-white/90 px-3 py-2 text-xs text-slate-600 shadow-sm backdrop-blur">{message}</p>
-            <div className="flex flex-col gap-2">
-              <button type="button" title="Zoom in" onClick={() => window.dispatchEvent(new CustomEvent("resealience-zoom-in"))}
-                className="rounded-lg border border-slate-200 bg-white px-3 py-2 font-bold shadow">+</button>
-              <button type="button" title="Zoom out" onClick={() => window.dispatchEvent(new CustomEvent("resealience-zoom-out"))}
-                className="rounded-lg border border-slate-200 bg-white px-3 py-2 font-bold shadow">−</button>
-            </div>
+            
           </div>
         </main>
       </div>
