@@ -1,19 +1,32 @@
 
-
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link, useLocation } from "react-router";
 import logo_white from "../assets/Logo-w.png";
 
 const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const location = useLocation();
 
   const closeMenu = () => setMenuOpen(false);
 
-  return (
-    <nav className="relative z-50 w-full border-b border-gray-200 bg-white">
-      <div className="mx-auto flex min-h-14 w-full max-w-7xl items-center justify-between px-4 py-2 sm:px-6">
+  const links = [
+    { name: "Home", to: "/" },
+    { name: "Open Map", to: "/map" },
+  ];
 
-        {/* Logo - navigates to homepage */}
+  const isActive = (path) => location.pathname === path;
+
+  const linkStyle = (path) =>
+    `block rounded-lg px-4 py-2.5 text-sm font-medium transition-colors ${
+      isActive(path)
+        ? "bg-[#e8f1e9] text-[#126c80]"
+        : "text-[#16394a] hover:bg-[#e8f1e9] hover:text-[#126c80]"
+    }`;
+
+  return (
+    <nav className="relative z-50 w-full border-b border-[#e3e8e1] bg-[#fffdf9] pt-[env(safe-area-inset-top)]">
+      <div className="mx-auto flex min-h-16 w-full max-w-7xl items-center justify-between px-4 py-2 sm:px-6">
+        {/* Logo */}
         <Link
           to="/"
           aria-label="reSEAlience homepage"
@@ -27,148 +40,25 @@ const Navbar = () => {
           />
         </Link>
 
-        {/* Hamburger menu */}
-        <button
-          type="button"
-          onClick={() => setMenuOpen((open) => !open)}
-          aria-label={menuOpen ? "Close menu" : "Open menu"}
-          aria-expanded={menuOpen}
-          aria-controls="homepage-navigation-menu"
-          className="flex h-11 w-11 shrink-0 flex-col items-center justify-center gap-1.5 rounded-lg text-[#194568] transition hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4e9a83]"
-        >
-          <span
-            className={`h-1 w-7 rounded-full bg-current transition-transform ${
-              menuOpen ? "translate-y-2 rotate-45" : ""
-            }`}
-          />
-
-          <span
-            className={`h-1 w-7 rounded-full bg-current transition-opacity ${
-              menuOpen ? "opacity-0" : ""
-            }`}
-          />
-
-          <span
-            className={`h-1 w-7 rounded-full bg-current transition-transform ${
-              menuOpen ? "-translate-y-3 -rotate-45" : ""
-            }`}
-          />
-        </button>
-      </div>
-
-      {/* Dropdown menu */}
-      {menuOpen && (
-        <div
-          id="homepage-navigation-menu"
-          className="absolute right-3 top-full mt-1 w-56 overflow-hidden rounded-xl border border-gray-200 bg-white p-2 shadow-lg sm:right-6"
-        >
-
-          {/* Home */}
-          <Link
-            to="/"
-            onClick={closeMenu}
-            className="block rounded-lg px-4 py-3 text-sm font-medium text-[#194568] hover:bg-gray-100"
-          >
-            Home
-          </Link>
-
-          {/* General Mapping Page */}
-          <Link
-            to="/map"
-            onClick={closeMenu}
-            className="block rounded-lg px-4 py-3 text-sm font-medium text-[#194568] hover:bg-gray-100"
-          >
-            Open Map
-          </Link>
-
-          {/* My Observations - future page */}
-          <Link
-            to="/observations"
-            onClick={closeMenu}
-            className="block rounded-lg px-4 py-3 text-sm font-medium text-[#194568] hover:bg-gray-100"
-          >
-            My Observations
-          </Link>
-
+        {/* Desktop navigation */}
+        <div className="hidden items-center gap-2 sm:flex">
+          {links.map((link) => (
+            <Link
+              key={link.to}
+              to={link.to}
+              className={linkStyle(link.to)}
+            >
+              {link.name}
+            </Link>
+          ))}
         </div>
-      )}
+
+      </div>
+    
     </nav>
+
+   
   );
 };
 
 export default Navbar;
-
-
-// import { useState } from "react";
-// import logo_white from "../assets/Logo-w.png";
-// import { Link } from "react-router";
-
-// const Navbar = () => {
-//   const [menuOpen, setMenuOpen] = useState(false);
-
-//   return (
-//     <nav className="relative z-50 w-full border-b border-gray-200 bg-white">
-//       <div className="mx-auto flex min-h-14 w-full max-w-7xl items-center justify-between px-4 py-2 sm:px-6">
-//         {/* Logo */}
-//         <a href="/" aria-label="reSEAlience homepage" className="shrink-0">
-//           <img
-//             src={logo_white}
-//             alt="reSEAlience"
-//             className="h-10 w-auto object-contain sm:h-12"
-//           />
-//         </a>
-
-//         {/* Hamburger menu */}
-//         <button
-//           type="button"
-//           onClick={() => setMenuOpen((open) => !open)}
-//           aria-label={menuOpen ? "Close menu" : "Open menu"}
-//           aria-expanded={menuOpen}
-//           className="flex h-11 w-11 shrink-0 flex-col items-center justify-center gap-1.5 rounded-lg text-[#194568] transition hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4e9a83]"
-//         >
-//           <span
-//             className={`h-1 w-7 rounded-full bg-current transition-transform ${
-//               menuOpen ? "translate-y-2 rotate-45" : ""
-//             }`}
-//           />
-//           <span
-//             className={`h-1 w-7 rounded-full bg-current transition-opacity ${
-//               menuOpen ? "opacity-0" : ""
-//             }`}
-//           />
-//           <span
-//             className={`h-1 w-7 rounded-full bg-current transition-transform ${
-//               menuOpen ? "-translate-y-3 -rotate-45" : ""
-//             }`}
-//           />
-//         </button>
-//       </div>
-
-//       {/* Dropdown menu */}
-//       {menuOpen && (
-//         <div className="absolute right-3 top-full mt-1 w-56 overflow-hidden rounded-xl border border-gray-200 bg-white p-2 shadow-lg sm:right-6">
-//           <a
-//             href="/"
-//             className="block rounded-lg px-4 py-3 text-sm font-medium text-[#194568] hover:bg-gray-100"
-//           >
-//             Home
-//           </a>
-//           <a
-//             href="/map"
-//             className="block rounded-lg px-4 py-3 text-sm font-medium text-[#194568] hover:bg-gray-100"
-//           >
-//             Open Map
-//           </a>
-//           <a
-//             href="/observations"
-//             className="block rounded-lg px-4 py-3 text-sm font-medium text-[#194568] hover:bg-gray-100"
-//           >
-//             My Observations
-//           </a>
-//         </div>
-//       )}
-//     </nav>
-//   );
-// };
-
-// export default Navbar;
