@@ -11,7 +11,21 @@ import OfflineRegionDownloader from
 
 
 const STORAGE_KEY = "resealience-map-features-v1";
-const kindLabels = { ground: "Fishing ground", route: "Fishing route", hazard: "Hazard", incident: "Incident" };
+const polygonTools = ["ground", "mangrove", "vegetation", "trash", "farm", "coral"];
+const lineTools = ["route"];
+const kindLabels = {
+  ground: "Fishing ground",
+  route: "Fishing route",
+  hazard: "Hazard",
+  incident: "Incident",
+  mangrove: "Mangrove",
+  vegetation: "Kelp",
+  trash: "Trash",
+  fish: "Fish sighting",
+  farm: "Fish farm",
+  coral: "Coral reef",
+};
+
 const isEmbeddedPreview = new URLSearchParams(window.location.search).get("embed") === "preview";
 
 function readSavedFeatures() {
@@ -23,11 +37,21 @@ function readSavedFeatures() {
   }
 }
 
+function formatObservedMonth(value) {
+  if (!value) return "Not recorded";
+  const [year, month] = value.split("-").map(Number);
+  if (!year || month < 1 || month > 12) return value;
+  return new Intl.DateTimeFormat(undefined, { month: "long", year: "numeric" })
+    .format(new Date(year, month - 1, 1));
+}
+
 export default function Mappage() {
   const [features, setFeatures] = useState(() =>
     isEmbeddedPreview ? [] : readSavedFeatures()
   );
   const [activeTool, setActiveTool] = useState("pan");
+  const [observedMonth, setObservedMonth] = useState("");
+  const [fishSpecies, setFishSpecies] = useState("");
   const [draftPoints, setDraftPoints] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -49,46 +73,115 @@ export default function Mappage() {
   );
 
   function handleMapPoint(point) {
-    if (activeTool === "pan") return;
-    if (activeTool === "ground" || activeTool === "route") {
-      setDraftPoints((current) => [...current, point]);
-      setMessage(`${draftPoints.length + 1} point(s) added. Finish when you're ready.`);
-      return;
-    }
-    const kind = activeTool;
-    const item = {
-      id: crypto.randomUUID ? crypto.randomUUID() : `feature-${Date.now()}`,
-      kind,
-      name: kind === "hazard" ? "Unlabelled hazard" : "Unlabelled incident",
-      points: [point],
-      createdAt: new Date().toISOString(),
-    };
-    setFeatures((current) => [...current, item]);
-    setSelectedId(item.id);
-    setMessage(`${kindLabels[kind]} added. Select it to edit its label or delete it.`);
-    setActiveTool("pan");
+  if (activeTool === "pan") return;
+
+  if (!observedMonth) {
+    setMessage(
+      "Choose the observed month and year before adding an observation."
+    );
+    return;
   }
 
-  function finishDrawing() {
-    const minimum = activeTool === "ground" ? 3 : 2;
-    if (draftPoints.length < minimum) {
-      setMessage(`${activeTool === "ground" ? "A fishing ground needs at least 3 points." : "A route needs at least 2 points."}`);
-      return;
-    }
-    const kind = activeTool;
-    const item = {
-      id: crypto.randomUUID ? crypto.randomUUID() : `feature-${Date.now()}`,
-      kind,
-      name: kind === "ground" ? `Fishing ground ${features.filter(f => f.kind === "ground").length + 1}` : `Fishing route ${features.filter(f => f.kind === "route").length + 1}`,
-      points: draftPoints,
-      createdAt: new Date().toISOString(),
-    };
-    setFeatures((current) => [...current, item]);
-    setSelectedId(item.id);
-    setDraftPoints([]);
-    setActiveTool("pan");
-    setMessage(`${kindLabels[kind]} saved on this device.`);
+  // Polygon and line drawing
+  if (
+    polygonTools.includes(activeTool) ||
+    lineTools.includes(activeTool)
+  ) {
+    setDraftPoints((current) => [...current, point]);
+
+    setMessage(
+      `${draftPoints.length + 1} point(s) added. Continue drawing or finish when ready.`
+    );
+
+    return;
   }
+
+  // Fish sighting requires a species name
+  if (activeTool === "fish" && !fishSpecies.trim()) {
+    setMessage("Enter the fish species before marking its location.");
+    return;
+  }
+
+  // Point-based features
+  const kind = activeTool;
+
+  const item = {
+    id: crypto.randomUUID
+      ? crypto.randomUUID()
+      : `feature-${Date.now()}`,
+
+    kind,
+    name: kindLabels[kind],
+    points: [point],
+
+    fishSpecies: kind === "fish" ? fishSpecies.trim() : null,
+
+    createdAt: new Date().toISOString(),
+    observedMonth,
+  };
+
+  setFeatures((current) => [...current, item]);
+  setSelectedId(item.id);
+
+  setFishSpecies("");
+  setActiveTool("pan");
+
+  setMessage(`${kindLabels[kind]} added.`);
+}
+
+  function finishDrawing() {
+  if (!observedMonth) {
+    setMessage("Choose the observed month and year.");
+    return;
+  }
+
+  const minimum = activeTool === "route" ? 2 : 3;
+
+  if (draftPoints.length < minimum) {
+    setMessage(
+      activeTool === "route"
+        ? "A route needs at least 2 points."
+        : "An area needs at least 3 points."
+    );
+    return;
+  }
+
+  if (activeTool === "farm" && !fishSpecies.trim()) {
+    setMessage("Enter the fish species present in this fish farm.");
+    return;
+  }
+
+  const kind = activeTool;
+
+  const item = {
+    id: crypto.randomUUID
+      ? crypto.randomUUID()
+      : `feature-${Date.now()}`,
+
+    kind,
+
+    name: `${kindLabels[kind]} ${
+      features.filter((f) => f.kind === kind).length + 1
+    }`,
+
+    points: draftPoints,
+
+    fishSpecies:
+      ["farm", "ground"].includes(kind) ? (fishSpecies.trim() || null) : null,
+
+    createdAt: new Date().toISOString(),
+    observedMonth,
+  };
+
+  setFeatures((current) => [...current, item]);
+  setSelectedId(item.id);
+
+  setDraftPoints([]);
+  setFishSpecies("");
+  setActiveTool("pan");
+
+  setMessage(`${kindLabels[kind]} saved on this device.`);
+}
 
   function cancelDrawing() {
     setDraftPoints([]);
@@ -98,6 +191,14 @@ export default function Mappage() {
 
   function updateSelectedName(name) {
     setFeatures((current) => current.map((feature) => feature.id === selectedId ? { ...feature, name } : feature));
+  }
+
+  function updateSelectedSpecies(value) {
+    setFeatures((current) =>
+      current.map((feature) =>
+        feature.id === selectedId ? { ...feature, fishSpecies: value } : feature
+      )
+    );
   }
 
   function deleteSelected() {
@@ -112,23 +213,57 @@ export default function Mappage() {
       type: "FeatureCollection",
       features: features.map((item) => {
         let geometry;
-        if (item.kind === "ground") {
-          const ring = item.points.map(([lat, lng]) => [lng, lat]);
-          if (ring.length) ring.push(ring[0]);
-          geometry = { type: "Polygon", coordinates: [ring] };
-        } else if (item.kind === "route") {
-          geometry = { type: "LineString", coordinates: item.points.map(([lat, lng]) => [lng, lat]) };
+
+        if (polygonTools.includes(item.kind)) {
+          const ring = item.points.map(([lat, lng]) => [
+            lng,
+            lat,
+          ]);
+
+          if (ring.length) {
+            ring.push(ring[0]);
+          }
+
+          geometry = {
+            type: "Polygon",
+            coordinates: [ring],
+          };
+
+        } else if (lineTools.includes(item.kind)) {
+
+          geometry = {
+            type: "LineString",
+            coordinates: item.points.map(([lat, lng]) => [
+              lng,
+              lat,
+            ]),
+          };
+
         } else {
+
           const [lat, lng] = item.points[0];
-          geometry = { type: "Point", coordinates: [lng, lat] };
+
+          geometry = {
+            type: "Point",
+            coordinates: [lng, lat],
+          };
         }
+
         return {
           type: "Feature",
+          properties: {
+            id: item.id,
+            name: item.name,
+            kind: item.kind,
+            fishSpecies: item.fishSpecies,
+            observedMonth: item.observedMonth,
+            createdAt: item.createdAt,
+          },
           geometry,
-          properties: { id: item.id, kind: item.kind, name: item.name, createdAt: item.createdAt },
         };
       }),
     };
+
     const json = JSON.stringify(collection, null, 2);
     const fileName = `resealience-observations-${new Date().toISOString().slice(0, 10)}.geojson`;
 
@@ -209,19 +344,19 @@ export default function Mappage() {
             
 <MapToolbar
   activeTool={activeTool}
+  observedMonth={observedMonth}
+  onObservedMonthChange={setObservedMonth}
+  fishSpecies={fishSpecies}
+  onFishSpeciesChange={setFishSpecies}
   onChange={(tool) => {
     setActiveTool(tool);
     setDraftPoints([]);
-    setMessage(
-      tool === "pan"
-        ? "Explore the map."
-        : `Selected ${kindLabels[tool] || tool}. Tap the map to add points.`
-    );
+    setFishSpecies("");
   }}
   onFinish={finishDrawing}
   canFinish={
     draftPoints.length >=
-    (activeTool === "ground" ? 3 : 2)
+    (activeTool === "route" ? 2 : 3)
   }
   onCancel={cancelDrawing}
 />
@@ -229,11 +364,6 @@ export default function Mappage() {
 {/* Offline map download controls */}
 <div className="my-4">
   <OfflineRegionDownloader />
-</div>
-
-{/* Your existing Saved features section stays below */}
-<div className="my-5 rounded-xl border border-slate-200 bg-white p-3">
-  {/* Keep your existing saved features code here */}
 </div>
 
 
@@ -251,7 +381,11 @@ export default function Mappage() {
                       <button type="button" onClick={() => setSelectedId(feature.id)}
                         className={`w-full rounded-lg border px-3 py-2 text-left ${selectedId === feature.id ? "border-teal-700 bg-teal-50" : "border-slate-200 hover:bg-slate-50"}`}>
                         <span className="block text-sm font-semibold">{feature.name}</span>
-                        <span className="mt-0.5 block text-xs capitalize text-slate-500">{kindLabels[feature.kind]} · {feature.points.length} point(s)</span>
+                        <span className="mt-0.5 block text-xs capitalize text-slate-500">{kindLabels[feature.kind] || feature.kind} · {feature.points.length} point(s)</span>
+                        <span className="mt-0.5 block text-xs text-slate-500">Observed: {formatObservedMonth(feature.observedMonth)}</span>
+                        {feature.fishSpecies && (
+                            <span className="mt-0.5 block text-xs text-slate-500">Species: {feature.fishSpecies}</span>
+                          )}
                       </button>
                     </li>
                   ))}
@@ -263,8 +397,22 @@ export default function Mappage() {
               <div className="mb-5 rounded-xl border border-teal-200 bg-teal-50/60 p-3">
                 <h2 className="text-sm font-bold">Feature details</h2>
                 <label className="mt-3 block text-xs font-semibold text-slate-600" htmlFor="feature-name">Label</label>
+               
+                {["fish", "farm", "ground"].includes(selectedFeature.kind) && (
+                  <>
+                    <label className="mt-3 block text-xs font-semibold text-slate-600" htmlFor="feature-species">Fish species</label>
+                    <input
+                      id="feature-species"
+                      value={selectedFeature.fishSpecies || ""}
+                      onChange={(event) => updateSelectedSpecies(event.target.value)}
+                      className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-teal-700 focus:ring-2 focus:ring-teal-100"
+                    />
+                  </>
+                )}
+                
                 <input id="feature-name" value={selectedFeature.name} onChange={(event) => updateSelectedName(event.target.value)}
                   className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-teal-700 focus:ring-2 focus:ring-teal-100" />
+                <p className="mt-2 text-xs text-slate-600">Observed: {formatObservedMonth(selectedFeature.observedMonth)}</p>
                 <p className="mt-2 break-all text-xs text-slate-500">ID: {selectedFeature.id}</p>
                 <button type="button" onClick={deleteSelected} className="mt-3 w-full rounded-lg bg-red-50 px-3 py-2 text-sm font-bold text-red-700 hover:bg-red-100">Delete selected feature</button>
               </div>

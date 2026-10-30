@@ -18,7 +18,7 @@
     "@capacitor/share": "^8.0.3",
     "@capacitor/status-bar": "^8.0.4",
     "leaflet": "^1.9.4",
-    "lucide-react": "^1.60.0",
+    "lucide-react": "^1.64.0",
     "map-gl-offline": "^0.8.9",
     "maplibre-gl": "^6.15.0",
     "react": "^19.2.8",
