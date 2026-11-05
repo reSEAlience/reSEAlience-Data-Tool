@@ -10,7 +10,7 @@ import "map-gl-offline/style.css";
 import workerUrl from
   "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 
-// Configure the MapLibre worker for Vite.
+// Configure the MapLibre
 maplibregl.setWorkerUrl(workerUrl);
 
 const STYLE_URL =
@@ -36,12 +36,13 @@ const COLORS = {
   fish: "#0ea5e9",
   farm: "#a855f7",
   coral: "#ec4899",
+  fgpoint: "#0ea5e9",
 };
 
-// Keep these in sync with Mappage.jsx
+// in sync with Mappage.jsx
 const POLYGON_KINDS = ["ground", "mangrove", "vegetation", "trash", "farm", "coral"];
 const LINE_KINDS = ["route"];
-const POINT_KINDS = ["hazard", "incident", "fish"];
+const POINT_KINDS = ["hazard", "incident", "fish", "fgpoint"];
 
 // MapLibre expression: pick a color by feature kind
 function colorByKind(kinds, fallback = "#0f766e") {
@@ -54,7 +55,7 @@ function colorByKind(kinds, fallback = "#0f766e") {
 }
 
 function toCoordinates(points = []) {
-  // Your existing points use [latitude, longitude].
+  //  points use [latitude, longitude].
   // GeoJSON and MapLibre use [longitude, latitude].
   return points.map(([lat, lng]) => [lng, lat]);
 }
@@ -263,7 +264,7 @@ export default function OfflineMap({
   const mapContainer = useRef(null);
   const mapInstance = useRef(null);
 
-  // Keep event handlers connected to the latest React props.
+  // Keep event handlers connected to the latest React props
   const propsRef = useRef({});
   propsRef.current = {
     activeTool,
@@ -275,7 +276,7 @@ export default function OfflineMap({
   const [mapReady, setMapReady] = useState(false);
   const [regionData, setRegionData] = useState(null);
 
-  // Initialize MapLibre once.
+  // Initialize MapLibre 
   useEffect(() => {
     if (!mapContainer.current || mapInstance.current) return;
 
@@ -373,6 +374,14 @@ export default function OfflineMap({
       });
 
       map.addLayer({
+        id: "route-hit",
+        type: "line",
+        source: "user-features",
+        filter: ["==", ["get", "kind"], "route"],
+        paint: { "line-color": "#000", "line-width": 18, "line-opacity": 0 },
+      });
+
+      map.addLayer({
         id: "hazard-points",
         type: "circle",
         source: "user-features",
@@ -427,6 +436,7 @@ export default function OfflineMap({
               "area-fill",
               "area-outline",
               "route-lines",
+              "route-hit",
               "hazard-points",
             ],
           }
@@ -436,10 +446,8 @@ export default function OfflineMap({
           (item) => item.properties?.featureId != null
         );
 
-        if (clickedFeature) {
-          current.onSelect?.(
-            clickedFeature.properties.featureId
-          );
+        if (clickedFeature && current.activeTool !== "route") {
+          current.onSelect?.(clickedFeature.properties.featureId);
           return;
         }
 
@@ -537,7 +545,7 @@ export default function OfflineMap({
     }
   }, [mapReady, regionData]);
 
-  // Update the maritime features when React props change.
+  // Update the maritime features.
   useEffect(() => {
     const map = mapInstance.current;
     if (!mapReady || !map) return;
