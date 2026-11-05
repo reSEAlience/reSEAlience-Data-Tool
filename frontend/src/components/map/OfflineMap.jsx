@@ -1,11 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  Map,
-  NavigationControl,
-  setWorkerUrl,
-} from "maplibre-gl";
-import "maplibre-gl/dist/maplibre-gl.css";
 import * as maplibregl from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css";
 import {
   OfflineMapManager,
   OfflineManagerControl,
@@ -15,17 +10,13 @@ import "map-gl-offline/style.css";
 import workerUrl from
   "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 
+// Configure the MapLibre
 maplibregl.setWorkerUrl(workerUrl);
 
 const STYLE_URL =
   "https://tiles.openfreemap.org/styles/liberty";
 
 const offlineManager = new OfflineMapManager();
-
-
-
-// Configure the MapLibre worker for Vite.
-setWorkerUrl(workerUrl);
 
 const EMPTY_GEOJSON = {
   type: "FeatureCollection",
@@ -39,10 +30,32 @@ const COLORS = {
   route: "#2563eb",
   hazard: "#ef4444",
   incident: "#fb923c",
+  mangrove: "#15803d",
+  vegetation: "#84cc16",
+  trash: "#78716c",
+  fish: "#0ea5e9",
+  farm: "#a855f7",
+  coral: "#ec4899",
+  fgpoint: "#0ea5e9",
 };
 
+// in sync with Mappage.jsx
+const POLYGON_KINDS = ["ground", "mangrove", "vegetation", "trash", "farm", "coral"];
+const LINE_KINDS = ["route"];
+const POINT_KINDS = ["hazard", "incident", "fish", "fgpoint"];
+
+// MapLibre expression: pick a color by feature kind
+function colorByKind(kinds, fallback = "#0f766e") {
+  return [
+    "match",
+    ["get", "kind"],
+    ...kinds.flatMap((kind) => [kind, COLORS[kind]]),
+    fallback,
+  ];
+}
+
 function toCoordinates(points = []) {
-  // Your existing points use [latitude, longitude].
+  //  points use [latitude, longitude].
   // GeoJSON and MapLibre use [longitude, latitude].
   return points.map(([lat, lng]) => [lng, lat]);
 }
@@ -59,42 +72,30 @@ function toFeatureCollection(features = [], selectedId) {
         selected: feature.id === selectedId,
       };
 
-      if (feature.kind === "ground" && coordinates.length >= 3) {
+      if (POLYGON_KINDS.includes(feature.kind) && coordinates.length >= 3) {
         return [{
           type: "Feature",
           properties,
           geometry: {
             type: "Polygon",
-            coordinates: [[
-              ...coordinates,
-              coordinates[0],
-            ]],
+            coordinates: [[...coordinates, coordinates[0]]],
           },
         }];
       }
 
-      if (feature.kind === "route" && coordinates.length >= 2) {
+      if (LINE_KINDS.includes(feature.kind) && coordinates.length >= 2) {
         return [{
           type: "Feature",
           properties,
-          geometry: {
-            type: "LineString",
-            coordinates,
-          },
+          geometry: { type: "LineString", coordinates },
         }];
       }
 
-      if (
-        ["hazard", "incident"].includes(feature.kind) &&
-        coordinates.length > 0
-      ) {
+      if (POINT_KINDS.includes(feature.kind) && coordinates.length > 0) {
         return [{
           type: "Feature",
           properties,
-          geometry: {
-            type: "Point",
-            coordinates: coordinates[0],
-          },
+          geometry: { type: "Point", coordinates: coordinates[0] },
         }];
       }
 
@@ -109,7 +110,7 @@ function toDraftCollection(draftPoints = [], activeTool) {
 
   if (
     coordinates.length >= 2 &&
-    ["route", "ground"].includes(activeTool)
+    ["route", ...POLYGON_KINDS].includes(activeTool)
   ) {
     features.push({
       type: "Feature",
@@ -263,7 +264,7 @@ export default function OfflineMap({
   const mapContainer = useRef(null);
   const mapInstance = useRef(null);
 
-  // Keep event handlers connected to the latest React props.
+  // Keep event handlers connected to the latest React props
   const propsRef = useRef({});
   propsRef.current = {
     activeTool,
@@ -275,13 +276,12 @@ export default function OfflineMap({
   const [mapReady, setMapReady] = useState(false);
   const [regionData, setRegionData] = useState(null);
 
-  // Initialize MapLibre once.
+  // Initialize MapLibre 
   useEffect(() => {
     if (!mapContainer.current || mapInstance.current) return;
 
     let disposed = false;
 
-    
     const map = new maplibregl.Map({
       container: mapContainer.current,
       style: STYLE_URL,
@@ -294,22 +294,20 @@ export default function OfflineMap({
       },
     });
 
-
     mapInstance.current = map;
 
-    
-  map.addControl(
-    new OfflineManagerControl(offlineManager, {
-      styleUrl: STYLE_URL,
-      mapLib: maplibregl,
-    }),
-    "top-right"
-  );
-
+    map.addControl(
+      new OfflineManagerControl(offlineManager, {
+        styleUrl: STYLE_URL,
+        mapLib: maplibregl,
+      }),
+      "top-right"
+    );
 
     map.on("load", () => {
       if (disposed) return;
 
+      // ---- Regional base data ----
       map.addSource("regional-data", {
         type: "geojson",
         data: EMPTY_GEOJSON,
@@ -335,40 +333,31 @@ export default function OfflineMap({
         },
       });
 
+      // ---- User features (the source must exist before its layers) ----
       map.addSource("user-features", {
         type: "geojson",
         data: EMPTY_GEOJSON,
       });
 
       map.addLayer({
-        id: "ground-fill",
+        id: "area-fill",
         type: "fill",
         source: "user-features",
-        filter: ["==", ["get", "kind"], "ground"],
+        filter: ["in", ["get", "kind"], ["literal", POLYGON_KINDS]],
         paint: {
-          "fill-color": COLORS.ground,
-          "fill-opacity": [
-            "case",
-            ["get", "selected"],
-            0.5,
-            0.28,
-          ],
+          "fill-color": colorByKind(POLYGON_KINDS),
+          "fill-opacity": ["case", ["get", "selected"], 0.5, 0.28],
         },
       });
 
       map.addLayer({
-        id: "ground-outline",
+        id: "area-outline",
         type: "line",
         source: "user-features",
-        filter: ["==", ["get", "kind"], "ground"],
+        filter: ["in", ["get", "kind"], ["literal", POLYGON_KINDS]],
         paint: {
-          "line-color": "#0f766e",
-          "line-width": [
-            "case",
-            ["get", "selected"],
-            4,
-            2.5,
-          ],
+          "line-color": colorByKind(POLYGON_KINDS),
+          "line-width": ["case", ["get", "selected"], 4, 2.5],
         },
       });
 
@@ -379,45 +368,33 @@ export default function OfflineMap({
         filter: ["==", ["get", "kind"], "route"],
         paint: {
           "line-color": COLORS.route,
-          "line-width": [
-            "case",
-            ["get", "selected"],
-            5,
-            3.5,
-          ],
+          "line-width": ["case", ["get", "selected"], 5, 3.5],
           "line-opacity": 0.95,
         },
+      });
+
+      map.addLayer({
+        id: "route-hit",
+        type: "line",
+        source: "user-features",
+        filter: ["==", ["get", "kind"], "route"],
+        paint: { "line-color": "#000", "line-width": 18, "line-opacity": 0 },
       });
 
       map.addLayer({
         id: "hazard-points",
         type: "circle",
         source: "user-features",
-        filter: ["in", ["get", "kind"], ["literal", ["hazard", "incident"]]],
+        filter: ["in", ["get", "kind"], ["literal", POINT_KINDS]],
         paint: {
-          "circle-color": [
-            "match",
-            ["get", "kind"],
-            "hazard", COLORS.hazard,
-            "incident", COLORS.incident,
-            "#0f766e",
-          ],
-          "circle-radius": [
-            "case",
-            ["get", "selected"],
-            9,
-            7,
-          ],
+          "circle-color": colorByKind(POINT_KINDS),
+          "circle-radius": ["case", ["get", "selected"], 9, 7],
           "circle-stroke-color": "#ffffff",
-          "circle-stroke-width": [
-            "case",
-            ["get", "selected"],
-            4,
-            2,
-          ],
+          "circle-stroke-width": ["case", ["get", "selected"], 4, 2],
         },
       });
 
+      // ---- Draft (in-progress drawing) ----
       map.addSource("draft-features", {
         type: "geojson",
         data: EMPTY_GEOJSON,
@@ -456,9 +433,10 @@ export default function OfflineMap({
           event.point,
           {
             layers: [
-              "ground-fill",
-              "ground-outline",
+              "area-fill",
+              "area-outline",
               "route-lines",
+              "route-hit",
               "hazard-points",
             ],
           }
@@ -468,10 +446,8 @@ export default function OfflineMap({
           (item) => item.properties?.featureId != null
         );
 
-        if (clickedFeature) {
-          current.onSelect?.(
-            clickedFeature.properties.featureId
-          );
+        if (clickedFeature && current.activeTool !== "route") {
+          current.onSelect?.(clickedFeature.properties.featureId);
           return;
         }
 
@@ -569,7 +545,7 @@ export default function OfflineMap({
     }
   }, [mapReady, regionData]);
 
-  // Update the maritime features when React props change.
+  // Update the maritime features.
   useEffect(() => {
     const map = mapInstance.current;
     if (!mapReady || !map) return;
