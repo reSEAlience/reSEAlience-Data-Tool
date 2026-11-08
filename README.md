@@ -1,5 +1,12 @@
 # reSEAlience-Data-Tool
 
+# how to set up locally 
+git clone <repository-url>
+cd reSEAlience-Data-Tool/frontend
+npm ci      
+npm run build
+
+
 ## How to Run in Android Studio
 Make sure directory is in frontend
 * npm run build
